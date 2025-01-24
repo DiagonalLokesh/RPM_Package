@@ -37,7 +37,6 @@ echo "Downloading latest version from: $LATEST_RPM"
 wget "$LATEST_RPM" -O latest.rpm && rpm -ivh latest.rpm
 
 # Assuming the RPM installs a service, enable and start it
-systemctl enable fastapi-app
-systemctl start fastapi-app
+fastapi-app
 
 echo "Application should now be running. Check system services for status."
