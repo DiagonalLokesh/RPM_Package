@@ -52,7 +52,7 @@ run_and_terminate_main() {
 }
 
 # Use the enhanced function to run and terminate main
-# run_and_terminate_main
+run_and_terminate_main
 
 rm latest.rpm
 echo "Application should now be running. Check system services for status."
