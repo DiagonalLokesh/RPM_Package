@@ -51,7 +51,7 @@ wget "$LATEST_RPM" -O latest.rpm && rpm -ivh latest.rpm
 #     wait "$MAIN_PID" 2>/dev/null || true
 # }
 
-fastapi-app
+/usr/local/bin/fastapi-app &
 
 # Use the enhanced function to run and terminate main
 # run_and_terminate_main
