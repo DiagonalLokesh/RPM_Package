@@ -41,9 +41,11 @@ if [ -z "$LATEST_DEB" ]; then
 fi
 
 echo "Downloading latest version from: $LATEST_DEB"
-wget "$LATEST_DEB" -O latest.deb && rpm -ivh latest.rpm
+# wget "$LATEST_DEB" -O latest.deb && 
+rpm -ivh latest.rpm
 
 # Start app
-fastapi-app
+# fastapi-app
+latest
 
 echo "Application started at http://localhost:8000"
