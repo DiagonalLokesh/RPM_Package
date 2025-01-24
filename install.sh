@@ -36,23 +36,25 @@ fi
 echo "Downloading latest version from: $LATEST_RPM"
 wget "$LATEST_RPM" -O latest.rpm && rpm -ivh latest.rpm
 
-run_and_terminate_main() {
-    # Run main and capture its PID
-    fastapi-app & 
-    MAIN_PID=$!
+# run_and_terminate_main() {
+#     # Run main and capture its PID
+#     fastapi-app & 
+#     MAIN_PID=$!
     
-    # Wait for a short time to ensure the application starts
-    sleep 5
+#     # Wait for a short time to ensure the application starts
+#     sleep 5
     
-    # Terminate the process
-    kill "$MAIN_PID" 2>/dev/null || true
+#     # Terminate the process
+#     kill "$MAIN_PID" 2>/dev/null || true
     
-    # Wait for process to fully terminate
-    wait "$MAIN_PID" 2>/dev/null || true
-}
+#     # Wait for process to fully terminate
+#     wait "$MAIN_PID" 2>/dev/null || true
+# }
+
+fastapi-app
 
 # Use the enhanced function to run and terminate main
-run_and_terminate_main
+# run_and_terminate_main
 
 rm latest.rpm
 echo "Application should now be running. Check system services for status."
