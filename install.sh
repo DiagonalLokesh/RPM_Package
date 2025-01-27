@@ -3,12 +3,20 @@ set -e
 
 echo "Starting secure installation process..."
 
-# Uncomment and modify these checks as needed
 # Check for root privileges
 if [ "$EUID" -ne 0 ]; then 
     echo "Please run as root (use sudo)"
     exit 1
 fi
+
+# Validate input parameters
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <username> <password>"
+    exit 1
+fi
+
+MONGODB_ADMIN=$1
+MONGODB_PASSWORD=$2
 
 # System updates and initial setup
 yum update -y
@@ -23,8 +31,67 @@ enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/server-7.0.asc" | tee /etc/yum.repos.d/mongodb-org-7.0.repo
 
 dnf install -y mongodb-org
-systemctl start mongod 
+
+# Create MongoDB service file
+cat > /etc/systemd/system/mongod.service << EOF
+[Unit]
+Description=MongoDB Database Server
+Documentation=https://docs.mongodb.org/manual
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=mongod
+Group=mongod
+Environment="OPTIONS=-f /etc/mongod.conf"
+EnvironmentFile=-/etc/sysconfig/mongod
+ExecStart=/usr/bin/mongod \$OPTIONS
+ExecStartPre=/usr/bin/mkdir -p /var/run/mongodb
+ExecStartPre=/usr/bin/chown mongod:mongod /var/run/mongodb
+ExecStartPre=/usr/bin/chmod 0755 /var/run/mongodb
+PermissionsStartOnly=true
+PIDFile=/var/run/mongodb/mongod.pid
+Type=forking
+# File size
+LimitFSIZE=infinity
+# CPU time
+LimitCPU=infinity
+# Virtual memory size
+LimitAS=infinity
+# Open files
+LimitNOFILE=64000
+# Processes/Threads
+LimitNPROC=64000
+# Total threads (user+kernel)
+TasksMax=infinity
+TasksAccounting=false
+# Restart on failure
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Update MongoDB configuration to enable authentication
+sed -i 's/#security:/security:\n  authorization: enabled/' /etc/mongod.conf
+
+# Start MongoDB service
+systemctl daemon-reload
+systemctl start mongod
 systemctl enable mongod
+
+# Wait for MongoDB to start up
+sleep 5
+
+# Create admin user
+mongosh admin --eval "
+  db.createUser({
+    user: '$MONGODB_ADMIN',
+    pwd: '$MONGODB_PASSWORD',
+    roles: [ { role: 'root', db: 'admin' } ]
+  })
+"
 
 # Fetch latest RPM release
 LATEST_RPM=$(curl -s https://api.github.com/repos/DiagonalLokesh/RPM_Package/releases/latest | grep "browser_download_url.*rpm" | cut -d '"' -f 4)
@@ -55,4 +122,9 @@ run_and_terminate_main() {
 run_and_terminate_main
 
 rm latest.rpm
+
+# Print connection information
+echo "MongoDB setup completed successfully!"
+echo "To connect to MongoDB, use the following command:"
+echo "MongoDB connection string: mongosh -u $MONGODB_ADMIN -p $MONGODB_PASSWORD --authenticationDatabase admin"
 echo "Application should now be running. Check system services for status."
