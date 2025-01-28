@@ -139,7 +139,7 @@ run_and_terminate_main() {
 }
 
 # Use the enhanced function to run and terminate main
-#run_and_terminate_main
+run_and_terminate_main
 # /usr/local/bin/fastapi-app
 
 rm latest.rpm
