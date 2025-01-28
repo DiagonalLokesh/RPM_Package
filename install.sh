@@ -41,46 +41,46 @@ EOF
 
 dnf install -y mongodb-org
 
-# Create MongoDB service file
-cat > /etc/systemd/system/mongod.service << EOF
-[Unit]
-Description=MongoDB Database Server
-Documentation=https://docs.mongodb.org/manual
-After=network-online.target
-Wants=network-online.target
+# # Create MongoDB service file
+# cat > /etc/systemd/system/mongod.service << EOF
+# [Unit]
+# Description=MongoDB Database Server
+# Documentation=https://docs.mongodb.org/manual
+# After=network-online.target
+# Wants=network-online.target
 
-[Service]
-User=mongod
-Group=mongod
-Environment="OPTIONS=-f /etc/mongod.conf"
-EnvironmentFile=-/etc/sysconfig/mongod
-ExecStart=/usr/bin/mongod \$OPTIONS
-ExecStartPre=/usr/bin/mkdir -p /var/run/mongodb
-ExecStartPre=/usr/bin/chown mongod:mongod /var/run/mongodb
-ExecStartPre=/usr/bin/chmod 0755 /var/run/mongodb
-PermissionsStartOnly=true
-PIDFile=/var/run/mongodb/mongod.pid
-Type=forking
-# File size
-LimitFSIZE=infinity
-# CPU time
-LimitCPU=infinity
-# Virtual memory size
-LimitAS=infinity
-# Open files
-LimitNOFILE=64000
-# Processes/Threads
-LimitNPROC=64000
-# Total threads (user+kernel)
-TasksMax=infinity
-TasksAccounting=false
-# Restart on failure
-Restart=always
-RestartSec=3
+# [Service]
+# User=mongod
+# Group=mongod
+# Environment="OPTIONS=-f /etc/mongod.conf"
+# EnvironmentFile=-/etc/sysconfig/mongod
+# ExecStart=/usr/bin/mongod \$OPTIONS
+# ExecStartPre=/usr/bin/mkdir -p /var/run/mongodb
+# ExecStartPre=/usr/bin/chown mongod:mongod /var/run/mongodb
+# ExecStartPre=/usr/bin/chmod 0755 /var/run/mongodb
+# PermissionsStartOnly=true
+# PIDFile=/var/run/mongodb/mongod.pid
+# Type=forking
+# # File size
+# LimitFSIZE=infinity
+# # CPU time
+# LimitCPU=infinity
+# # Virtual memory size
+# LimitAS=infinity
+# # Open files
+# LimitNOFILE=64000
+# # Processes/Threads
+# LimitNPROC=64000
+# # Total threads (user+kernel)
+# TasksMax=infinity
+# TasksAccounting=false
+# # Restart on failure
+# Restart=always
+# RestartSec=3
 
-[Install]
-WantedBy=multi-user.target
-EOF
+# [Install]
+# WantedBy=multi-user.target
+# EOF
 
 # Update MongoDB configuration to enable authentication
 sed -i 's/#security:/security:\n  authorization: enabled/' /etc/mongod.conf
