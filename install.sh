@@ -83,7 +83,17 @@ dnf install -y mongodb-org
 # EOF
 
 # Update MongoDB configuration to enable authentication
-sed -i 's/#security:/security:\n  authorization: enabled/' /etc/mongod.conf
+# sed -i 's/#security:/security:\n  authorization: enabled/' /etc/mongod.conf
+
+cat > /etc/mongod.conf << EOF
+# MongoDB Configuration
+net:
+  port: 27017
+  bindIp: 127.0.0.1
+
+security:
+  authorization: enabled
+EOF
 
 # Start MongoDB service
 systemctl daemon-reload
