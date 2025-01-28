@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+
 echo "Starting secure installation process..."
 
 # Check for root privileges
@@ -9,18 +10,25 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Validate input parameters
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <username> <password> <client_username>"
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <username> <password>"
     exit 1
 fi
 
 MONGODB_ADMIN=$1
 MONGODB_PASSWORD=$2
-CLIENT_USERNAME=$3
 
 # System updates and initial setup
 yum update -y
 yum install -y wget dos2unix gnupg curl acl attr
+
+# Install MongoDB
+# echo "[mongodb-org-7.0]
+# name=MongoDB Repository
+# baseurl=https://repo.mongodb.org/yum/redhat/9/mongodb-org/7.0/x86_64/
+# gpgcheck=1
+# enabled=1
+# gpgkey=https://www.mongodb.org/static/pgp/server-7.0.asc" | tee /etc/yum.repos.d/mongodb-org-7.0.repo
 
 sudo tee /etc/yum.repos.d/mongodb-org-8.0.repo << 'EOF'
 [mongodb-org-8.0]
@@ -104,41 +112,6 @@ fi
 echo "Downloading latest version from: $LATEST_RPM"
 wget "$LATEST_RPM" -O latest.rpm && rpm -ivh latest.rpm
 
-# Create service user and set up client user
-useradd -r -s /sbin/nologin fastapi_service || true
-useradd -m -s /bin/bash "$CLIENT_USERNAME" 2>/dev/null || echo "User $CLIENT_USERNAME already exists"
-
-# Configure sudoers to prevent access to specific paths
-echo "$CLIENT_USERNAME ALL=(ALL:ALL) ALL,!/usr/local/bin/fastapi-app" > /etc/sudoers.d/$CLIENT_USERNAME
-chmod 0440 /etc/sudoers.d/$CLIENT_USERNAME
-
-# Secure the FastAPI executable
-chmod 100 /usr/local/bin/fastapi-app  # --x: execute only, no read/write
-chown root:root /usr/local/bin/fastapi-app
-
-# Apply ACL restrictions
-setfacl -m u:$CLIENT_USERNAME:--x /usr/local/bin/fastapi-app  # Give client execute only
-setfacl -m g::--- /usr/local/bin/fastapi-app  # No group permissions
-setfacl -m o::--- /usr/local/bin/fastapi-app  # No other permissions
-
-# Create systemd service to maintain permissions
-cat > /etc/systemd/system/fastapi-protect.service << EOF
-[Unit]
-Description=Protect FastAPI executable
-After=network.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/chmod 100 /usr/local/bin/fastapi-app
-ExecStart=/usr/bin/chown root:root /usr/local/bin/fastapi-app
-RemainAfterExit=yes
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl enable fastapi-protect
-
 run_and_terminate_main() {
     # Run main and capture its PID
     /usr/local/bin/fastapi-app &
@@ -157,7 +130,6 @@ run_and_terminate_main() {
 # Use the enhanced function to run and terminate main
 run_and_terminate_main
 
-# Cleanup
 rm latest.rpm
 
 # Print connection information
