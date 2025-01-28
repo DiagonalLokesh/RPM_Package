@@ -9,14 +9,14 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Validate input parameters
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <username> <password>"
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 <username> <password> <client_username>"
     exit 1
 fi
 
 MONGODB_ADMIN=$1
 MONGODB_PASSWORD=$2
+CLIENT_USERNAME=$3
 
 # System updates and initial setup
 yum update -y
