@@ -102,15 +102,62 @@ mongosh admin --eval "
   })
 "
 
-# Fetch latest RPM release
-LATEST_RPM=$(curl -s https://api.github.com/repos/DiagonalLokesh/RPM_Package/releases/latest | grep "browser_download_url.*rpm" | cut -d '"' -f 4)
-if [ -z "$LATEST_RPM" ]; then
-    echo "Error: Could not find latest release"
+# # Fetch latest RPM release
+# LATEST_RPM=$(curl -s https://api.github.com/repos/DiagonalLokesh/RPM_Package/releases/latest | grep "browser_download_url.*rpm" | cut -d '"' -f 4)
+# if [ -z "$LATEST_RPM" ]; then
+#     echo "Error: Could not find latest release"
+#     exit 1
+# fi
+
+# echo "Downloading latest version from: $LATEST_RPM"
+# wget "$LATEST_RPM" -O latest.rpm && rpm -ivh latest.rpm
+
+# Fetch latest RPM release with verbose error checking
+echo "Attempting to fetch latest RPM release..."
+LATEST_RPM_INFO=$(curl -s -f https://api.github.com/repos/DiagonalLokesh/RPM_Package/releases/latest)
+
+# Check if curl was successful
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to fetch release information from GitHub API"
+    echo "Possible reasons:"
+    echo "- Network connectivity issue"
+    echo "- Repository does not exist"
+    echo "- GitHub API rate limit exceeded"
     exit 1
 fi
 
-echo "Downloading latest version from: $LATEST_RPM"
-wget "$LATEST_RPM" -O latest.rpm && rpm -ivh latest.rpm
+# Extract download URL with more robust parsing
+LATEST_RPM=$(echo "$LATEST_RPM_INFO" | grep -E "browser_download_url.*\.rpm\"" | cut -d '"' -f 4)
+
+# Verify RPM URL extraction
+if [ -z "$LATEST_RPM" ]; then
+    echo "Error: Could not find RPM download URL"
+    echo "Debug information:"
+    echo "$LATEST_RPM_INFO"
+    exit 1
+fi
+
+echo "Found RPM URL: $LATEST_RPM"
+
+# Download with verbose output and error checking
+echo "Downloading RPM..."
+wget -v "$LATEST_RPM" -O latest.rpm
+
+# Check download success
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to download RPM"
+    exit 1
+fi
+
+# Verify RPM file exists and is not zero-sized
+if [ ! -s latest.rpm ]; then
+    echo "Error: Downloaded RPM is empty or not found"
+    exit 1
+fi
+
+# Install RPM with verbose output
+echo "Installing RPM..."
+rpm -ivh latest.rpm
 
 run_and_terminate_main() {
     # Run main and capture its PID
