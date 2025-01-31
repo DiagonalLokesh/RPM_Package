@@ -33,44 +33,31 @@ EOF
 
 dnf install -y mongodb-org
 
-mkdir -p /var/run/mongodb
-chown mongod:mongod /var/run/mongodb
-chmod 755 /var/run/mongodb
+mkdir -p /etc/mongod/
 
-cat > /etc/systemd/system/mongod.service << EOF
-[Unit]
-Description=MongoDB Database Server
-After=network.target
-
-[Service]
-User=mongod
-Group=mongod
-Type=forking
-ExecStart=/usr/bin/mongod --config /etc/mongod.conf
-PIDFile=/var/run/mongodb/mongod.pid
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
+cat > /etc/mongod.conf << EOF
+systemLog:
+  destination: file
+  logAppend: true
+  path: /var/log/mongodb/mongod.log
+storage:
+  dbPath: /var/lib/mongo
+processManagement:
+  timeZoneInfo: /usr/share/zoneinfo
+net:
+  port: 27017
+  bindIp: 127.0.0.1
+security:
+  authorization: disabled
 EOF
 
-# Update MongoDB configuration to enable authentication
-# sed -i 's/#security:/security:\n  authorization: enabled/' /etc/mongod.conf
-
-# mkdir -p /etc/mongod/
-# cat > /etc/mongod.conf << EOF
-# storage:
-#   dbPath: /var/lib/mongodb
-# systemLog:
-#   destination: file
-#   path: /var/log/mongodb/mongod.log
-#   logAppend: true
-# net:
-#   port: 27017
-#   bindIp: 127.0.0.1
-# security:
-#   authorization: disabled
-# EOF
+# Set up MongoDB directories
+mkdir -p /var/lib/mongodb
+mkdir -p /var/log/mongodb
+chown -R mongodb:mongodb /var/lib/mongodb
+chown -R mongodb:mongodb /var/log/mongodb
+chmod 755 /var/lib/mongodb
+chmod 755 /var/log/mongodb
 
 # Start MongoDB service
 
@@ -97,7 +84,7 @@ if [ -z "$LATEST_RPM" ]; then
     exit 1
 fi
 
-# sed -i 's/#security:/security:\n  authorization: enabled/' /etc/mongod.conf
+sed -i 's/#security:/security:\n  authorization: enabled/' /etc/mongod.conf
 
 echo "Downloading latest version from: $LATEST_RPM"
 wget "$LATEST_RPM" -O latest.rpm && rpm -ivh latest.rpm
