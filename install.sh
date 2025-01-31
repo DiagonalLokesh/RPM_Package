@@ -22,14 +22,6 @@ CLIENT_USERNAME=$3
 yum update -y
 yum install -y wget dos2unix gnupg curl acl attr
 
-# Install MongoDB
-# echo "[mongodb-org-7.0]
-# name=MongoDB Repository
-# baseurl=https://repo.mongodb.org/yum/redhat/9/mongodb-org/7.0/x86_64/
-# gpgcheck=1
-# enabled=1
-# gpgkey=https://www.mongodb.org/static/pgp/server-7.0.asc" | tee /etc/yum.repos.d/mongodb-org-7.0.repo
-
 sudo tee /etc/yum.repos.d/mongodb-org-8.0.repo << 'EOF'
 [mongodb-org-8.0]
 name=MongoDB Repository
@@ -41,58 +33,63 @@ EOF
 
 dnf install -y mongodb-org
 
-# # Create MongoDB service file
-# cat > /etc/systemd/system/mongod.service << EOF
-# [Unit]
-# Description=MongoDB Database Server
-# Documentation=https://docs.mongodb.org/manual
-# After=network-online.target
-# Wants=network-online.target
+# Create MongoDB service file
+cat > /etc/systemd/system/mongod.service << EOF
+[Unit]
+Description=MongoDB Database Server
+Documentation=https://docs.mongodb.org/manual
+After=network-online.target
+Wants=network-online.target
 
-# [Service]
-# User=mongod
-# Group=mongod
-# Environment="OPTIONS=-f /etc/mongod.conf"
-# EnvironmentFile=-/etc/sysconfig/mongod
-# ExecStart=/usr/bin/mongod \$OPTIONS
-# ExecStartPre=/usr/bin/mkdir -p /var/run/mongodb
-# ExecStartPre=/usr/bin/chown mongod:mongod /var/run/mongodb
-# ExecStartPre=/usr/bin/chmod 0755 /var/run/mongodb
-# PermissionsStartOnly=true
-# PIDFile=/var/run/mongodb/mongod.pid
-# Type=forking
-# # File size
-# LimitFSIZE=infinity
-# # CPU time
-# LimitCPU=infinity
-# # Virtual memory size
-# LimitAS=infinity
-# # Open files
-# LimitNOFILE=64000
-# # Processes/Threads
-# LimitNPROC=64000
-# # Total threads (user+kernel)
-# TasksMax=infinity
-# TasksAccounting=false
-# # Restart on failure
-# Restart=always
-# RestartSec=3
+[Service]
+User=mongod
+Group=mongod
+Environment="OPTIONS=-f /etc/mongod.conf"
+EnvironmentFile=-/etc/sysconfig/mongod
+ExecStart=/usr/bin/mongod \$OPTIONS
+ExecStartPre=/usr/bin/mkdir -p /var/run/mongodb
+ExecStartPre=/usr/bin/chown mongod:mongod /var/run/mongodb
+ExecStartPre=/usr/bin/chmod 0755 /var/run/mongodb
+PermissionsStartOnly=true
+PIDFile=/var/run/mongodb/mongod.pid
+Type=forking
+# File size
+LimitFSIZE=infinity
+# CPU time
+LimitCPU=infinity
+# Virtual memory size
+LimitAS=infinity
+# Open files
+LimitNOFILE=64000
+# Processes/Threads
+LimitNPROC=64000
+# Total threads (user+kernel)
+TasksMax=infinity
+TasksAccounting=false
+# Restart on failure
+Restart=always
+RestartSec=3
 
-# [Install]
-# WantedBy=multi-user.target
-# EOF
+[Install]
+WantedBy=multi-user.target
+EOF
 
 # Update MongoDB configuration to enable authentication
 # sed -i 's/#security:/security:\n  authorization: enabled/' /etc/mongod.conf
 
+# mkdir -p /etc/mongod/
 # cat > /etc/mongod.conf << EOF
-# # MongoDB Configuration
+# storage:
+#   dbPath: /var/lib/mongodb
+# systemLog:
+#   destination: file
+#   path: /var/log/mongodb/mongod.log
+#   logAppend: true
 # net:
 #   port: 27017
 #   bindIp: 127.0.0.1
-
 # security:
-#   authorization: enabled
+#   authorization: disabled
 # EOF
 
 # Start MongoDB service
@@ -120,6 +117,8 @@ if [ -z "$LATEST_RPM" ]; then
     exit 1
 fi
 
+# sed -i 's/#security:/security:\n  authorization: enabled/' /etc/mongod.conf
+
 echo "Downloading latest version from: $LATEST_RPM"
 wget "$LATEST_RPM" -O latest.rpm && rpm -ivh latest.rpm
 
@@ -141,6 +140,7 @@ run_and_terminate_main() {
 # Use the enhanced function to run and terminate main
 run_and_terminate_main
 # /usr/local/bin/fastapi-app
+
 
 rm latest.rpm
 
