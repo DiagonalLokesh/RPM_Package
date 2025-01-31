@@ -54,8 +54,8 @@ EOF
 # Set up MongoDB directories
 mkdir -p /var/lib/mongodb
 mkdir -p /var/log/mongodb
-chown -R mongodb:mongodb /var/lib/mongodb
-chown -R mongodb:mongodb /var/log/mongodb
+chown -R mongod:mongod /var/lib/mongodb
+chown -R mongod:mongod /var/log/mongodb
 chmod 755 /var/lib/mongodb
 chmod 755 /var/log/mongodb
 
