@@ -89,6 +89,8 @@ EOF
 
 # Start MongoDB service
 
+sudo chmod 644 /etc/systemd/system/mongod.service
+
 systemctl daemon-reload
 systemctl start mongod
 systemctl enable mongod
