@@ -33,13 +33,14 @@ EOF
 
 dnf install -y mongodb-org
 
-# Create MongoDB service file
-cat > /etc/systemd/system/mongod.service << 'EOF'
+mkdir -p /var/run/mongodb
+chown mongod:mongod /var/run/mongodb
+chmod 755 /var/run/mongodb
+
+cat > /etc/systemd/system/mongod.service << EOF
 [Unit]
 Description=MongoDB Database Server
-Documentation=https://docs.mongodb.org/manual
-After=network-online.target
-Wants=network-online.target
+After=network.target
 
 [Service]
 User=mongod
@@ -47,23 +48,7 @@ Group=mongod
 Type=forking
 ExecStart=/usr/bin/mongod --config /etc/mongod.conf
 PIDFile=/var/run/mongodb/mongod.pid
-
-# Some default limits
-LimitFSIZE=infinity
-LimitCPU=infinity
-LimitAS=infinity
-LimitNOFILE=64000
-LimitNPROC=64000
-TasksMax=infinity
-
-# Restart on failure
 Restart=always
-RestartSec=3
-TimeoutStartSec=0
-
-# Direct systemd to create directory and set permissions
-RuntimeDirectory=mongodb
-RuntimeDirectoryMode=0755
 
 [Install]
 WantedBy=multi-user.target
@@ -88,8 +73,6 @@ EOF
 # EOF
 
 # Start MongoDB service
-
-sudo chmod 644 /etc/systemd/system/mongod.service
 
 systemctl daemon-reload
 systemctl start mongod
